@@ -112,7 +112,6 @@ class RecreateData:
     '''
 
     def __init__(self, min_score, max_score, num_samples, mean, variance, debug=True, mean_precision=0.0, variance_precision=0.0):
-
         self.simpleData = defaultdict(list)
         self.debug = debug
         self.absolute_min = min_score
