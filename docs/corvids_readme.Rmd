@@ -190,12 +190,6 @@ Once the solution space has been returned, there are two additional methods that
 rd.analyzeSkew()
 ```
 
-* `graphData(max_samples=40)` creates a 3D histogram of the solution space, plotting `max_samples` number of solutions. For the sake of runtime, this argument defaults to 40, as this process can be extremely slow for large solution spaces.
-
-```{python eval=FALSE}
-rd.graphData()
-```
-![](sample_fig.png)
 
 #Usage notes
 

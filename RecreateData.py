@@ -130,6 +130,7 @@ class RecreateData:
         self.variance_precision = variance_precision
         self.extended_poss_vals = None
 
+
     def adjust_sol(self, solution, num_adjustments):
         if num_adjustments == 0:
             return solution
@@ -607,89 +608,12 @@ class RecreateData:
         return skews, np.mean(skews), np.std(skews, dtype=np.float64, ddof=1.0)**2
 
 
-    def graphData(self, max_samples=20):
-
-        fig = plt.figure()
-        ax1 = fig.add_subplot(111, projection='3d')
-
-        if not self.sols:
-            if not self.simpleData:
-                if self.debug:
-                    print "No solutions to run analysis over.  NB: graphData() must be run before analyzeSkew()"
-                raise ValueError
-            sols = []
-            all_sols = []
-            for sol_set in self.simpleData.values():
-                for sol in sol_set:
-                    all_sols.append(sol)
-            if max_samples == -1:
-                sols = all_sols
-            else:
-                sols = random.sample(all_sols, min(max_samples, len(all_sols)))
-            if len(sols) == 1:
-                sols.append([0]*len(sols[0]))
-            xpos = []
-            ypos = []
-            dz = []
-            for index1, sol in enumerate(sols):
-                counter = collections.Counter(sol)
-                for val in self.poss_vals:
-                    ypos.append(val - .5)
-                    xpos.append(index1 + .5) #added + .5
-                    dz.append(counter[val])
-
-
-            num_elements = len(xpos)
-            zpos = [0]*num_elements
-            dx = np.ones(num_elements)
-            dy = np.ones(num_elements)
-
-            plt.ylim(min(ypos), max(ypos) + 1)
-
-        else:
-            sols = []
-            all_sols = []
-            for sol_set in self.sols.values():
-                all_sols.extend(sol_set)
-            if max_samples == -1:
-                sols = all_sols
-            else:
-                sols = random.sample(all_sols, min(max_samples, len(all_sols)))
-            if len(sols) == 1:
-                sols.append([0]*len(sols[0]))
-
-            xpos = []
-            ypos = []
-            dz = []
-            for index1, sol in enumerate(sols):
-                for index2,val in enumerate(sol):
-                    ypos.append(self.poss_vals[index2] - .5)
-                    xpos.append(index1 + .5) #added + .5
-                    dz.append(val)
-
-            num_elements = len(xpos)
-            zpos = [0]*num_elements
-            dx = np.ones(num_elements)
-            dy = np.ones(num_elements)
-
-            plt.ylim(min(ypos), max(ypos) + 1)
-
-        ax1.bar3d(xpos, ypos, zpos, dx, dy, dz, color='#00ceaa')
-        ax1.set_xlabel('Solution Number')
-        ax1.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(base=1))
-        ax1.set_ylabel('Response Value')
-        ax1.yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(base=1))
-        ax1.set_zlabel('Frequency')
-        ax1.zaxis.set_major_locator(matplotlib.ticker.MultipleLocator(base=1))
-        plt.show()
-
-
     def getDataSimple(self):
         if self.simpleData:
             return self.simpleData
         if not self.sols:
             if self.debug:
-                print "No solutions to run analysis over.  NB: graphData() must be run before analyzeSkew()"
+                print "No solutions to run analysis over."
             raise ValueError
         for param, sol_list in self.sols.iteritems():
             for sol in sol_list:
@@ -708,5 +632,3 @@ if __name__ == "__main__":
     RD = RecreateData(1,7,10,3,4, mean_precision=0.5, variance_precision=0.5)
     RD.recreateData(multiprocess=True, find_first=False)
     print RD.getDataSimple()
-
-    RD.graphData(max_samples=10)
