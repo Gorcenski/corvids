@@ -229,62 +229,6 @@ class RecreateData:
         return mean_variances
 
 
-    def getSolutionSpace(self, check_val=None, poss_vals=None):
-        mean = self.mean
-        variance = self.variance
-
-        if not poss_vals:
-            poss_vals = xrange(self.absolute_min, self.absolute_max+1)
-        else:
-            self.min_score = min(poss_vals)
-            self.max_score = max(poss_vals)
-
-        mean *=self.num_samples
-        mean = int(round(mean))
-        variance *=(self.num_samples-1)
-        variance *=self.num_samples**2
-        variance = int(Decimal(str(variance)))
-
-        A_list = []
-        for i in poss_vals:
-            coef = []
-            coef.append(1) # participants
-            coef.append( (i)) # scaled mean -- total_sum
-            coef.append((self.num_samples * (i)-mean)**2) # variance
-            A_list.append(coef)
-        A = Matrix(A_list).T
-        if check_val:
-            if isinstance(check_val,int):
-                variance -= (self.num_samples*check_val - mean)**2
-                mean -= check_val
-                self.num_samples -= 1
-            elif isinstance(check_val, list):
-                for val in check_val:
-                    variance -= (self.num_samples*val - mean)**2
-                    mean -= val
-                    self.num_samples -= 1
-            elif isinstance(check_val, dict):
-                for val, num in check_val.iteritems():
-                    variance -= num*(self.num_samples*val - mean)**2
-                    mean -= val*num
-                    self.num_samples -= num
-            else:
-                raise TypeError
-        b = Matrix([self.num_samples, mean, variance])
-        basis = Matrix(dio.getBasis(A, b))
-        self.num_samples = self.un_mut_num_samples
-        self.mean = self.un_mut_mean
-        self.variance = self.un_mut_variance
-        try:
-            base_vec = basis[-1,:]
-            basis = basis[:-1,:]
-            return base_vec, basis, A, b
-        except IndexError:
-            if self.debug:
-                print "No solutions exist (postive or otherwise)"
-            return None
-
-
     def _recreateData_piece_1(self, check_val=None, poss_vals=None, multiprocess=True, find_first=False):
         means_list = [self.mean]
         variances_list = [self.variance]
