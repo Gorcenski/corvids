@@ -222,7 +222,7 @@ class RecreateData:
         lower_value = int(math.ceil((self.variance - self.variance_precision) * (self.n_minus_1_n_squared)))
         upper_value = (math.floor((self.variance + self.variance_precision) * (self.n_minus_1_n_squared))) + 1
 
-        # definitely some improvements to make here
+        # definitely some improvements to make here, perhaps use a generator?
         for m in means_list:
             # construct the minimum variance (not within our range or anything, we are just going to use this for granularity purposes)
             initial_mean_valid = self._initial_mean_valid_from_mean(m)
@@ -535,16 +535,21 @@ class RecreateData:
 
 
     def recreateData(self, check_val=None, poss_vals=None, multiprocess=True, find_first=False):
+        # does not use check_val or multiprocess
         mean_var_pairs = self._recreateData_piece_1(check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
 
         if not mean_var_pairs:
             return None
+        # does not use find_first
         solution_spaces = self._recreateData_piece_2(mean_var_pairs, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
 
         if find_first:
+            # Does not use find_first
             return self._findFirst_piece_1(solution_spaces, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
         else:
+            # does not use multiprocess or find_first
             init_bases, init_base_vecs, param_tuples = self._findAll_piece_1_multi_proc(solution_spaces, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
+            # does not use multiprocess or find_first
             return self._findAll_piece_2_multi_proc(init_bases, init_base_vecs,param_tuples, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
 
 
