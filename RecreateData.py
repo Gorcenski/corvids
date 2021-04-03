@@ -1,7 +1,8 @@
 __author__ = 'Sean Wilner'
 from findSolutionsWithManipBasis import *
+from decimal import Decimal
+from functools import reduce
 from sympy import Matrix
-from decimal import  Decimal
 import math, random, itertools, functools, collections
 
 from mpl_toolkits.mplot3d import Axes3D
@@ -25,7 +26,7 @@ def multiprocessGetManipBases(basis_and_base_vec):
     return (manip_basis, manip_base_vec)
 
 def multiprocessGetSolutionSpace(min_score, max_score, num_samples, mean_and_variance,
-                                 check_val=None, poss_vals = None, debug=True):
+                                 check_val=None, poss_vals=None, debug=True):
     '''
     A function call to mimic the one on the RecreateData object while remaining multiprocess compatible
         (can't pickle an object method within the object namespace)
@@ -60,49 +61,36 @@ def multiprocessGetSolutionSpace(min_score, max_score, num_samples, mean_and_var
         poss_vals = xrange(min_score, max_score+1)
 
     mean, variance = mean_and_variance
-    param_tuple = (mean, variance)
+    mean = int(round(mean * num_samples))
+    # use this type casting to handle larger numbers with better precision
+    variance = int(Decimal(str(variance * (num_samples - 1) * num_samples ** 2)))
+    A = Matrix([[1, i, ((num_samples * i) - mean) ** 2] for i in poss_vals]).T
 
-    mean *=num_samples
-    mean = int(round(mean))
-    variance *=(num_samples-1)
-    variance *=num_samples**2
-    variance = int(Decimal(str(variance)))
-
-    A_list = []
-    for i in poss_vals:
-        coef = []
-        coef.append(1) # participants
-        coef.append( (i)) # scaled mean -- total_sum
-        coef.append(((num_samples * i)-mean)**2) # variance
-        A_list.append(coef)
-    A = Matrix(A_list).T
     if check_val:
         if isinstance(check_val,int):
-            variance -= (num_samples*check_val - mean)**2
-            mean -= check_val
-            num_samples -= 1
+            check_vals = [(check_val, 1)]
         elif isinstance(check_val, list):
-            for val in check_val:
-                variance -= (num_samples*val - mean)**2
-                mean -= val
-                num_samples -= 1
+            check_vals = zip(check_val, [1] * len(check_val))
         elif isinstance(check_val, dict):
-            for val, num in check_val.iteritems():
-                variance -= num*(num_samples*val - mean)**2
-                mean -= val*num
-                num_samples -= num
+            check_vals = [(val, num) for val, num in check_val.iteritems()]
         else:
-            raise TypeError
+            raise TypeError 
+        [num_samples, mean, variance] = reduce(lambda x, y: [x[0] - y[1],
+                                                             x[1] - y[0] * y[1],
+                                                             x[2] - y[1] * (x[0] * y[0] - x[1]) ** 2],
+                                               check_vals,
+                                               [num_samples, mean, variance])
+
     b = Matrix([num_samples, mean, variance])
     basis = Matrix(dio.getBasis(A, b))
-
     try:
         base_vec = basis[-1,:]
         basis = basis[:-1,:]
         if debug:
-            print "found potential at: " + str(mean_and_variance)
-        return base_vec, basis, A, b, param_tuple
+            print("found potential at: " + str(mean_and_variance))
+        return base_vec, basis, A, b, mean_and_variance
     except IndexError:
+        print("Unable to find a potential basis")
         return None
 
 class RecreateData:
@@ -132,6 +120,12 @@ class RecreateData:
         self.mean_range = xrange(int(math.ceil((self.mean - self.mean_precision) * self.num_samples)),
                                  int(math.floor((self.mean + self.mean_precision) * self.num_samples)) + 1)
         self.n_minus_1_n_squared = (self.num_samples - 1) * self.num_samples ** 2
+
+
+    def set_ranges_with_possible_values(self, poss_vals):
+        self.min_score = min(poss_vals)
+        self.max_score = max(poss_vals)
+        self.poss_vals = poss_vals
 
 
     def adjust_sol(self, solution, num_adjustments):
@@ -184,6 +178,7 @@ class RecreateData:
             new_sol.sort()
         return new_sol
 
+
     def _initial_adjusted_var_from_mean(self, mean):
         return ((self.num_samples - mean * self.num_samples % self.num_samples) *
                 (math.floor(mean) - mean) ** 2 +
@@ -191,13 +186,15 @@ class RecreateData:
                 (math.ceil(mean) - mean) ** 2
                ) / (self.num_samples - 1) * self.n_minus_1_n_squared
 
+
     def _initial_mean_valid_from_mean(self, mean):
         return ([int(math.floor(mean))] *
                 (int((self.num_samples - mean * self.num_samples % self.num_samples))) +
                 [int(math.ceil(mean))] * 
                 int((mean * self.num_samples % self.num_samples))
                )
-    
+
+
     def _emit_debug_information_for_valid_means_variances(self, solutions):
         self.simpleData.update(solutions)
         print(str(sum([len(x) for x in self.simpleData.itervalues()])) + " unique solutions found simulatenously (not neccessarily complete!!).")
@@ -212,6 +209,7 @@ class RecreateData:
                 index += 1
                 print(simpleSol)
         print("Could not find a unique first solution. Try setting find_first to false. Exiting.")
+
 
     def _compute_valid_means_variances(self, findFirst):
         solutions = defaultdict(list)
@@ -251,15 +249,9 @@ class RecreateData:
         return mean_variances
 
 
-    def set_ranges_with_possible_values(self, poss_vals):
-        self.min_score = min(poss_vals)
-        self.max_score = max(poss_vals)
-        self.poss_vals = poss_vals
-
-
     def _recreateData_piece_2(self, mean_variance_pairs, check_val=None, poss_vals=None, multiprocess=True, find_first=False):
         if self.debug:
-            print "Checking for potential solution spaces."
+            print("Checking for potential solution spaces.")
         if multiprocess:
             pool = mp.Pool()
             func = functools.partial(multiprocessGetSolutionSpace,self.min_score, self.max_score, self.num_samples,
@@ -268,12 +260,11 @@ class RecreateData:
             pool.close()
             pool.join()
         else:
-            solution_spaces = []
-            for mean_variance_pair in mean_variance_pairs:
-                solution_spaces.append(multiprocessGetSolutionSpace(self.min_score, self.max_score, self.num_samples,
-                                                                    mean_variance_pair,
-                                                                    check_val=check_val, poss_vals=poss_vals,
-                                                                    debug=self.debug))
+            solution_spaces = [multiprocessGetSolutionSpace(self.min_score, self.max_score, self.num_samples,
+                                                            mean_variance_pair,
+                                                            check_val=check_val, poss_vals=poss_vals,
+                                                            debug=self.debug)
+                               for mean_variance_pair in mean_variance_pairs]
         return solution_spaces
 
 
@@ -531,7 +522,9 @@ class RecreateData:
         mean_var_pairs = self._compute_valid_means_variances(find_first)
 
         if not mean_var_pairs:
+            print("Could not compute mean-variance pairs. Exiting.")
             return None
+            
         # does not use find_first
         solution_spaces = self._recreateData_piece_2(mean_var_pairs, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
 
