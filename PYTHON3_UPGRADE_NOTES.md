@@ -35,3 +35,4 @@ The code is quite clever although was not written with software engineering best
   - I removed the `analyzeSkew` method that wasn't being used without the GUI code.
   - I removed the unused `getSolutionSpace` method.
   - I added unit and integration tests for the `validMeansVariances` method
+  - I renamed and refactored `validMeansVariances` to `compute_valid_means_variances` method

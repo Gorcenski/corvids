@@ -128,6 +128,9 @@ class RecreateData:
         self.mean_precision = mean_precision
         self.variance_precision = variance_precision
         self.extended_poss_vals = None
+        self.mean_range = xrange(int(math.ceil((self.mean - self.mean_precision) * self.num_samples)),
+                                 int(math.floor((self.mean + self.mean_precision) * self.num_samples)) + 1)
+        self.n_minus_1_n_squared = (self.num_samples - 1) * self.num_samples ** 2
 
 
     def adjust_sol(self, solution, num_adjustments):
@@ -180,52 +183,70 @@ class RecreateData:
             new_sol.sort()
         return new_sol
 
+    def _initial_adjusted_var_from_mean(self, mean):
+        return ((self.num_samples - mean * self.num_samples % self.num_samples) *
+                (math.floor(mean) - mean) ** 2 +
+                (mean * self.num_samples % self.num_samples) *
+                (math.ceil(mean) - mean) ** 2
+               ) / (self.num_samples - 1) * self.n_minus_1_n_squared
 
-    def validMeansVariances(self, findFirst):
+    def _initial_mean_valid_from_mean(self, mean):
+        return ([int(math.floor(mean))] *
+                (int((self.num_samples - mean * self.num_samples % self.num_samples))) +
+                [int(math.ceil(mean))] * 
+                int((mean * self.num_samples % self.num_samples))
+               )
+    
+    def _emit_debug_information_for_valid_means_variances(self, solutions):
+        self.simpleData.update(solutions)
+        print(str(sum([len(x) for x in self.simpleData.itervalues()])) + " unique solutions found simulatenously (not neccessarily complete!!).")
+        index = 0
+        for params in self.simpleData:
+            if index > 100:
+                break
+            print("At mean, variance", params, ":")
+            for simpleSol in self.simpleData[params]:
+                if index > 100:
+                    break
+                index += 1
+                print(simpleSol)
+        print("Could not find a unique first solution. Try setting find_first to false. Exiting.")
+
+    def compute_valid_means_variances(self, findFirst):
         solutions = defaultdict(list)
-        means_list = []
-        for i in xrange(int(math.ceil((self.mean - self.mean_precision)*self.num_samples)),
-                        int(math.floor((self.mean + self.mean_precision)*self.num_samples))+1):
-            means_list.append(float(i)/self.num_samples)
+        means_list = [float(i) / self.num_samples for i in self.mean_range]
+        
         mean_variances = []
-        step_size = 2*self.num_samples**2
+
+        step_size = 2 * self.num_samples ** 2
+        lower_value = int(math.ceil((self.variance - self.variance_precision) * (self.n_minus_1_n_squared)))
+        upper_value = (math.floor((self.variance + self.variance_precision) * (self.n_minus_1_n_squared))) + 1
+
+        # definitely some improvements to make here
         for m in means_list:
             # construct the minimum variance (not within our range or anything, we are just going to use this for granularity purposes)
-            initial_var = ((self.num_samples - m*self.num_samples%self.num_samples)*(math.floor(m)-m)**2 +
-                           (m*self.num_samples%self.num_samples)*(math.ceil(m)-m)**2)/(self.num_samples-1)
-            initial_mean_valid = [int(math.floor(m))] * (int((self.num_samples - m*self.num_samples%self.num_samples))) + [int(math.ceil(m))] * int((m*self.num_samples%self.num_samples))
-            initial_adjusted_var = initial_var *(self.num_samples - 1)*self.num_samples**2
-            
-            i = int(math.ceil((self.variance - self.variance_precision)*((self.num_samples-1)*self.num_samples**2)))
-            while i <(math.floor((self.variance + self.variance_precision)*((self.num_samples-1)*self.num_samples**2)))+1:
-                if (i-initial_adjusted_var)%step_size != 0:
-                    i +=step_size - (i-initial_adjusted_var)%step_size
-                    continue
-                mean_variances.append((m, float(i)/((self.num_samples - 1)*self.num_samples**2)))
-                solution = self.adjust_sol(initial_mean_valid, int((i-initial_adjusted_var)/step_size))
-                if solution:
-                    solutions[(m, float(i)/((self.num_samples - 1)*self.num_samples**2))].append(solution)
-                i +=step_size
-        if findFirst:
-            if len(solutions) > 0:
-                self.simpleData.update(solutions)
-                if self.debug:
-                    print str(sum([len(x) for x in self.simpleData.itervalues()])) + " unique solutions found simulatenously (not neccessarily complete!!)."
-                    index = 0
-                    for params in self.simpleData:
-                        if index > 100:
-                            break
-                        print "At mean, variance", params, ":"
-                        for simpleSol in self.simpleData[params]:
-                            if index > 100:
-                                break
-                            index += 1
-                            print simpleSol
-                # TODO: improve this messaging and justify why this returns no result
-                print "Done."
-                return
+            initial_mean_valid = self._initial_mean_valid_from_mean(m)
+            initial_adjusted_var = self._initial_adjusted_var_from_mean(m)            
+
+            i = lower_value
+            while i < upper_value:
+                offset = (i - initial_adjusted_var) % step_size
+                if offset == 0:
+                    i_over_n_minus_1_n_squared = float(i) / self.n_minus_1_n_squared
+                    mean_variances.append((m, i_over_n_minus_1_n_squared))
+
+                    solution = self.adjust_sol(initial_mean_valid, int((i - initial_adjusted_var) / step_size))
+                    if solution:
+                        solutions[(m, i_over_n_minus_1_n_squared)].append(solution)
+                i += step_size - offset
+
         if self.debug:
-            print "Total potential mean/variance pairs to consider: " + str(len(mean_variances))
+            if findFirst and len(solutions) > 0:
+                self._emit_debug_information_for_valid_means_variances(solutions)
+                return None
+        else:
+            print("Total potential mean/variance pairs to consider: " + str(len(mean_variances)))
+            
         return mean_variances
 
 
@@ -240,7 +261,7 @@ class RecreateData:
             self.max_score = max(poss_vals)
         self.poss_vals = poss_vals
 
-        mean_variance_pairs = self.validMeansVariances(find_first)
+        mean_variance_pairs = self.compute_valid_means_variances(find_first)
 
         return mean_variance_pairs
 
