@@ -587,26 +587,6 @@ class RecreateData:
             return self._findAll_piece_2_multi_proc(init_bases, init_base_vecs,param_tuples, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
 
 
-    def analyzeSkew(self):
-        import scipy.stats.stats
-        import numpy as np
-
-        if not self.sols:
-            if self.debug:
-                print "No solutions to run analysis over.  NB: recreateData() must be run before analyzeSkew()"
-            raise ValueError
-
-        skews = []
-        for sol_set in self.sols.values():
-            for dist in sol_set:
-                sol = []
-                for i, x in enumerate(dist):
-                    sol += [i + 1]*x
-                skews.append(scipy.stats.stats.skew(sol))
-
-        return skews, np.mean(skews), np.std(skews, dtype=np.float64, ddof=1.0)**2
-
-
     def getDataSimple(self):
         if self.simpleData:
             return self.simpleData
