@@ -444,6 +444,7 @@ class RecreateData:
                 if solution_space == None:
                     continue
                 base_vec, basis, _, _, param_tuple = solution_space
+                print(basis)
                 if len(basis) == 0:
                     if not any([val<0 for val in base_vec._mat]):
                         sol = base_vec._mat

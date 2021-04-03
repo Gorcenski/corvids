@@ -15,6 +15,68 @@ class TestRecreateData(unittest.TestCase):
         expected_result = [[1, 2, 3, 4, 5]]
         self.rd.recreateData()
         self.assertEqual(expected_result, self.rd.getDataSimple()[expected_key])
+   
+    def test_integration_get_data_simple_with_multiple_results(self):
+        expected_key = (3.0, 2.0)
+        expected_result_first = [1, 2, 4, 4, 4]
+        expected_result_second = [2, 2, 2, 4, 5]
+        self.rd = RecreateData(min_score=1, max_score=5, num_samples=5, mean=3.0, variance=2.0)
+        self.rd.recreateData()
+        self.assertIn(expected_result_first, self.rd.getDataSimple()[expected_key])
+        self.assertIn(expected_result_second, self.rd.getDataSimple()[expected_key])
+    
+    def test_integration_with_no_multiprocess(self):
+        expected_key = (3.0, 2.5)
+        expected_result_first = [1, 2, 3, 4, 5]
+        expected_result_second = [2, 2, 2, 4, 5]
+        self.rd.recreateData(multiprocess=False)
+        self.assertIn(expected_result_first, self.rd.getDataSimple()[expected_key])
+        self.assertNotIn(expected_result_second, self.rd.getDataSimple()[expected_key])
+    
+    # Eventually we only need this one
+    def test_integration_with_find_first(self):
+        expected_key = (3.0, 2.5)
+        expected_result_first = [1, 2, 3, 4, 5]
+        expected_result_second = [2, 2, 2, 4, 5]
+        self.rd.recreateData(find_first=True)
+        self.assertIn(expected_result_first, self.rd.getDataSimple()[expected_key])
+        self.assertNotIn(expected_result_second, self.rd.getDataSimple()[expected_key])
+    
+    def test_integration_with_check_val(self):
+        expected_key = (3.0, 2.0)
+        expected_result_first = [1, 2, 4, 4, 4]
+        expected_result_second = [2, 2, 2, 4, 5]
+        self.rd = RecreateData(min_score=1, max_score=5, num_samples=5, mean=3.0, variance=2.0)
+        self.rd.recreateData(check_val=1)
+        self.assertIn(expected_result_first, self.rd.getDataSimple()[expected_key])
+        self.assertNotIn(expected_result_second, self.rd.getDataSimple()[expected_key])
+    
+    def test_integration_with_poss_vals(self):
+        expected_key = (3.0, 2.0)
+        expected_result_first = [1, 2, 4, 4, 4]
+        expected_result_second = [2, 2, 2, 4, 5]
+        self.rd = RecreateData(min_score=1, max_score=5, num_samples=5, mean=3.0, variance=2.0)
+        self.rd.recreateData(poss_vals=[2, 3, 4, 5])
+        self.assertNotIn(expected_result_first, self.rd.getDataSimple()[expected_key])
+        self.assertIn(expected_result_second, self.rd.getDataSimple()[expected_key])
+
+    def test_integration_with_check_val_and_find_first(self):
+        expected_key = (3.0, 2.0)
+        expected_result_first = [1, 2, 4, 4, 4]
+        expected_result_second = [2, 2, 2, 4, 5]
+        self.rd = RecreateData(min_score=1, max_score=5, num_samples=5, mean=3.0, variance=2.0)
+        self.rd.recreateData(check_val=5, find_first=True)
+        self.assertNotIn(expected_result_first, self.rd.getDataSimple()[expected_key])
+        self.assertIn(expected_result_second, self.rd.getDataSimple()[expected_key])
+
+    def test_integration_with_check_val_and_poss_vals(self):
+        expected_key = (3.0, 2.0)
+        expected_result_first = [1, 2, 4, 4, 4]
+        expected_result_second = [2, 2, 2, 4, 5]
+        self.rd = RecreateData(min_score=1, max_score=5, num_samples=5, mean=3.0, variance=2.0)
+        self.rd.recreateData(check_val=5, poss_vals=[2, 3, 4, 5])
+        self.assertNotIn(expected_result_first, self.rd.getDataSimple()[expected_key])
+        self.assertIn(expected_result_second, self.rd.getDataSimple()[expected_key])
 
     def test_integration_get_data_simple_should_return_valueerror_if_no_data(self):
         self.assertRaises(ValueError, self.rd.getDataSimple)
