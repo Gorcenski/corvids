@@ -221,7 +221,7 @@ class RecreateData:
                                 break
                             index += 1
                             print simpleSol
-
+                # TODO: improve this messaging and justify why this returns no result
                 print "Done."
                 return
         if self.debug:

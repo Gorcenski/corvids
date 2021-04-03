@@ -33,4 +33,5 @@ The code is quite clever although was not written with software engineering best
   - I have added some basic integration tests of the core methods: `recreateData` and `getDataSimple()`. Only the default arguments for `recreateData` are currently tested.
   - I've added integration tests to test some of the arguments for `recreateData`, but they appear not to work.
   - I removed the `analyzeSkew` method that wasn't being used without the GUI code.
-  - I removed the unused `getSolutionSpace` method
+  - I removed the unused `getSolutionSpace` method.
+  - I added unit and integration tests for the `validMeansVariances` method
