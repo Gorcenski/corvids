@@ -78,22 +78,22 @@ class TestRecreateData(unittest.TestCase):
         self.assertNotIn(expected_result_first, self.rd.getDataSimple()[expected_key])
         self.assertIn(expected_result_second, self.rd.getDataSimple()[expected_key])
 
-    def test_compute_valid_means_variances(self):
+    def test__compute_valid_means_variances(self):
         self.rd = RecreateData(min_score=1, max_score=5, num_samples=5, mean=3.0, variance=2.0)
         self.rd.poss_vals = range(self.rd.absolute_min, self.rd.absolute_max+1)
         expected_result = [(3.0, 2.0)]
-        self.assertEqual(expected_result, self.rd.compute_valid_means_variances(False))
+        self.assertEqual(expected_result, self.rd._compute_valid_means_variances(False))
 
-    def test_compute_valid_means_variances_with_precision(self):
+    def test__compute_valid_means_variances_with_precision(self):
         self.rd = RecreateData(min_score=1, max_score=5, num_samples=50, mean=3.0, variance=2.0, mean_precision=0.1, variance_precision=0.01)
         self.rd.poss_vals = range(self.rd.absolute_min, self.rd.absolute_max+1)
         expected_result = (3.0, 2.0)
-        self.assertIn(expected_result, self.rd.compute_valid_means_variances(False))
+        self.assertIn(expected_result, self.rd._compute_valid_means_variances(False))
 
-    def test_compute_valid_means_variances_with_precision_and_find_first_true_with_none_result(self):
+    def test__compute_valid_means_variances_with_precision_and_find_first_true_with_none_result(self):
         self.rd = RecreateData(min_score=1, max_score=50, num_samples=50, mean=3.0, variance=2.5, mean_precision=0.1, variance_precision=0.01)
         self.rd.poss_vals = range(self.rd.absolute_min, self.rd.absolute_max+1)
-        self.assertIsNone(self.rd.compute_valid_means_variances(True))
+        self.assertIsNone(self.rd._compute_valid_means_variances(True))
 
     def test_compute_initial_adjusted_var_from_mean(self):
         self.rd = RecreateData(min_score=1, max_score=50, num_samples=50, mean=3.0, variance=2.5, mean_precision=0.1, variance_precision=0.01)

@@ -212,7 +212,7 @@ class RecreateData:
                 print(simpleSol)
         print("Could not find a unique first solution. Try setting find_first to false. Exiting.")
 
-    def compute_valid_means_variances(self, findFirst):
+    def _compute_valid_means_variances(self, findFirst):
         solutions = defaultdict(list)
         means_list = [float(i) / self.num_samples for i in self.mean_range]
         
@@ -261,7 +261,7 @@ class RecreateData:
             self.max_score = max(poss_vals)
         self.poss_vals = poss_vals
 
-        mean_variance_pairs = self.compute_valid_means_variances(find_first)
+        mean_variance_pairs = self._compute_valid_means_variances(find_first)
 
         return mean_variance_pairs
 
