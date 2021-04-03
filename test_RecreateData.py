@@ -107,6 +107,17 @@ class TestRecreateData(unittest.TestCase):
         expected_result = [2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
         self.assertEquals(expected_result, self.rd._initial_mean_valid_from_mean(expected_input))
 
+    def test_poss_vals_autoset_on_init(self):
+        self.rd = RecreateData(min_score=1, max_score=5, num_samples=50, mean=3.0, variance=2.0, mean_precision=0.1, variance_precision=0.01)
+        expected_poss_vals = [1, 2, 3, 4, 5]
+        self.assertEquals(expected_poss_vals, self.rd.poss_vals)
+
+    def test_set_ranges_with_possible_values(self):
+        self.rd = RecreateData(min_score=1, max_score=5, num_samples=50, mean=3.0, variance=2.0, mean_precision=0.1, variance_precision=0.01)
+        expected_poss_vals = [1, 2, 3, 4]
+        self.rd.set_ranges_with_possible_values(expected_poss_vals)
+        self.assertEquals(expected_poss_vals, self.rd.poss_vals)
+
     def test_integration_recreate_data_with_find_first_true_with_none_result(self):
         self.rd = RecreateData(min_score=1, max_score=50, num_samples=50, mean=3.0, variance=2.5, mean_precision=0.1, variance_precision=0.01)
         self.assertIsNone(self.rd.recreateData(find_first=True))

@@ -118,6 +118,7 @@ class RecreateData:
         self.min_score = min_score
         self.absolute_max = max_score
         self.max_score = max_score
+        self.poss_vals = range(self.absolute_min, self.absolute_max + 1)
         self.num_samples = num_samples
         self.mean = mean
         self.variance = variance
@@ -250,20 +251,10 @@ class RecreateData:
         return mean_variances
 
 
-    def _recreateData_piece_1(self, check_val=None, poss_vals=None, multiprocess=True, find_first=False):
-        means_list = [self.mean]
-        variances_list = [self.variance]
-
-        if not poss_vals:
-            poss_vals = range(self.absolute_min, self.absolute_max+1)
-        else:
-            self.min_score = min(poss_vals)
-            self.max_score = max(poss_vals)
+    def set_ranges_with_possible_values(self, poss_vals):
+        self.min_score = min(poss_vals)
+        self.max_score = max(poss_vals)
         self.poss_vals = poss_vals
-
-        mean_variance_pairs = self._compute_valid_means_variances(find_first)
-
-        return mean_variance_pairs
 
 
     def _recreateData_piece_2(self, mean_variance_pairs, check_val=None, poss_vals=None, multiprocess=True, find_first=False):
@@ -535,8 +526,9 @@ class RecreateData:
 
 
     def recreateData(self, check_val=None, poss_vals=None, multiprocess=True, find_first=False):
-        # does not use check_val or multiprocess
-        mean_var_pairs = self._recreateData_piece_1(check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
+        if poss_vals:
+            self.set_ranges_with_possible_values(poss_vals)
+        mean_var_pairs = self._compute_valid_means_variances(find_first)
 
         if not mean_var_pairs:
             return None

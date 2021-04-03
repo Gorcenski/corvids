@@ -36,3 +36,4 @@ The code is quite clever although was not written with software engineering best
   - I removed the unused `getSolutionSpace` method.
   - I added unit and integration tests for the `validMeansVariances` method
   - I renamed and refactored `validMeansVariances` to `_compute_valid_means_variances` method
+  - I refactored the `_recreateData_piece_1` to remove its statefulness, moving its stateful behavior to a public setter, and replacing its usage with a direct call to `_compute_valid_means_variances`
