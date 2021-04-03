@@ -437,7 +437,6 @@ class RecreateData:
     def _findFirst_piece_1(self, solution_spaces, check_val=None, poss_vals=None, multiprocess=True, find_first=True):
         base_vecs = []
         bases = []
-
         if multiprocess:
             init_base_vecs = []
             init_bases = []
@@ -456,8 +455,6 @@ class RecreateData:
                                 except ValueError:
                                     temp_sol.append(1)
                                     poss_vals.append(check_val)
-                                    # temp_sol[poss_vals.index(val)]=1
-
                             elif isinstance(check_val, list):
                                 for val in check_val:
                                     try:
@@ -487,7 +484,6 @@ class RecreateData:
                 base_vecs.append(basis_and_init[1])
                 bases.append(basis_and_init[0])
             sol = multiprocess_recurse_find_first(bases, base_vecs, covered=set())
-            # print sol
         else:
             for solution_space in solution_spaces:
                 if solution_space == None:
@@ -540,7 +536,6 @@ class RecreateData:
             self.extended_poss_vals = poss_vals
             return None
         sol = [int(v) for v in sol]
-        
         if check_val:
             if isinstance(check_val,int):
                 try:
