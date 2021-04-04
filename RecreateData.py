@@ -5,14 +5,7 @@ from functools import reduce
 from sympy import Matrix
 import math, random, itertools, functools, collections
 
-from mpl_toolkits.mplot3d import Axes3D
 from sys import platform as sys_pf
-if sys_pf == 'darwin':
-     import matplotlib
-     matplotlib.use("TkAgg")
-else:
-    import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -349,7 +342,7 @@ class RecreateData:
 
         if self.debug:
             print "Done."
-        temp_sols =self.sols
+        temp_sols = self.sols
         self.sols = {}
         for key, value in temp_sols.iteritems():
             if len(value)>0:

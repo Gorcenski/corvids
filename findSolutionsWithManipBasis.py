@@ -106,7 +106,7 @@ def multiprocess_recurse_find_first(a, b, covered=set()):
             runnables.append((a_inst, b_inst, 5, set()))
     else:
         runnables = [(a, b, 5, set())]
-    # print "Runnables: ", runnables
+    # print("Runnables: ", runnables
     while len(runnables) > 0:
         return_lists = pool.map(multiprocess_recurse_func, runnables)
         runnables = []
@@ -177,76 +177,17 @@ if __name__ == "__main__":
     b = forced_neg_removal(a, b)
     start = time.time()
     sols = multiprocess_recurse_over_solution_path(a, b)
-    print sols
-    print time.time() - start
+    print(sols)
+    print(time.time() - start)
     start = time.time()
     sols = recurse_over_solution_path(a, b)
-    print sols
-    print time.time() - start
+    print(sols)
+    print(time.time() - start)
     start = time.time()
     sols = multiprocess_recurse_find_first([a], [b], covered=set())
-    print sols
-    print time.time() - start
+    print(sols)
+    print(time.time() - start)
     start = time.time()
     sols = recurse_find_first(a, b, covered=set())
-    print sols
-    print time.time() - start
-
-################## Older code that uses a worse form of multiprocessing ############################
-#
-# def multi_thread_recurse_func(params):
-#     a_indx, a_, a, b, covered = params
-#     covered.update(xrange(a_indx))
-#     sols = []
-#     b_temp = list_sum(a_, b)
-#     temp_neg =set([indx for indx,b_ in enumerate(b_temp) if b_<0])
-#     if len(temp_neg) == 0:
-#         # print b_temp
-#         sols.append(b_temp)
-#     if not dead_solution(a, b):#temp_neg.issubset(neg_indices):
-#         # print covered
-#         sols.extend(recurse_over_solution_path(a, b_temp, covered=set(covered), multiprocessing=False))
-#     return sols
-#
-# def recurse_over_solution_path(a, b, covered = set(), multiprocessing=None):
-#     sols = []
-#     # print b
-#     # neg_indices = set([indx for indx,b_ in enumerate(b) if b_<0])
-#     if multiprocessing:
-#         sols.extend(list(itertools.chain.from_iterable(
-#             multiprocessing.map(multi_thread_recurse_func,
-#                      [(a_indx, a_, a, b, covered) for (a_indx, a_) in enumerate(a)
-#                                                  if a_indx not in covered]
-#                      )
-#         )
-#         )
-#         )
-#     else:
-#         for a_indx, a_ in enumerate(a):
-#             if a_indx in covered:
-#                 continue
-#             b_temp = list_sum(a_, b)
-#             temp_neg =set([indx for indx,b_ in enumerate(b_temp) if b_<0])
-#             if len(temp_neg) == 0:
-#                 # print b_temp
-#                 sols.append(b_temp)
-#             if not dead_solution(a, b):#if temp_neg.issubset(neg_indices):
-#                 # print covered
-#                 sols.extend(recurse_over_solution_path(a, b_temp, covered=set(covered), multiprocessing=False))
-#             covered.add(a_indx)
-#
-#     return sols
-#
-# def find_dependencies(a, b):
-#     if isinstance(a, list):
-#         a = Matrix(a)
-#     if isinstance(b, list):
-#         b = Matrix(b)
-#     assert isinstance(a, Matrix) and isinstance(b,Matrix)
-#     col_row_deps = []
-#     for col_index in xrange(a.cols):
-#         column = list(a.col(col_index))
-#         col_row_deps.append([])
-#         for i in xrange(len(column)):
-#             col_row_deps[-1].append(column[i])
-#     return col_row_deps
+    print(sols)
+    print(time.time() - start)
