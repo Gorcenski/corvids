@@ -1,7 +1,7 @@
 import unittest
 from sympy import Matrix
 
-from RecreateData import RecreateData, multiprocessGetManipBases, multiprocessGetSolutionSpace
+from RecreateData import RecreateData, multiprocessGetManipBases, multiprocess_get_solution_space
 
 class TestRecreateData(unittest.TestCase):
     def setUp(self):
@@ -162,8 +162,8 @@ class TestRecreateData(unittest.TestCase):
         mvp2 = rd2._compute_valid_means_variances(False)
         self.assertEquals(rd1._build_solution_space(mvp1, multiprocess=True), rd2._build_solution_space(mvp2, multiprocess=False))
 
-    # multiprocessGetSolutionSpace
-    def test_multiprocessGetSolutionSpace(self):
+    # multiprocess_get_solution_space
+    def test_multiprocess_get_solution_space(self):
         expected_result = (Matrix([[1, 1, 0, 3, 0]]), 
                            Matrix([[-1, 3, -3,  1, 0],
                                    [-1, 2,  0, -2, 1]]),
@@ -174,9 +174,9 @@ class TestRecreateData(unittest.TestCase):
                                    [ 15],
                                    [200]]),
                            (3.0, 2.0))
-        self.assertEquals(expected_result, multiprocessGetSolutionSpace(1, 5, 5, (3.0, 2.0)))
+        self.assertEquals(expected_result, multiprocess_get_solution_space(1, 5, 5, (3.0, 2.0)))
 
-    def test_multiprocessGetSolutionSpace_with_int_check_val(self):
+    def test_multiprocess_get_solution_space_with_int_check_val(self):
         expected_result = (Matrix([[0, 3, 0, 1, 0]]), 
                            Matrix([[-1, 3, -3,  1, 0],
                                    [-1, 2,  0, -2, 1]]),
@@ -187,23 +187,23 @@ class TestRecreateData(unittest.TestCase):
                                    [ 10],
                                    [100]]),
                            (3.0, 2.0))
-        self.assertEquals(expected_result, multiprocessGetSolutionSpace(1, 5, 5, (3.0, 2.0), check_val=5))
+        self.assertEquals(expected_result, multiprocess_get_solution_space(1, 5, 5, (3.0, 2.0), check_val=5))
 
-    def test_multiprocessGetSolutionSpace_with_single_list_check_val_same_as_scalar(self):
-        self.assertEquals(multiprocessGetSolutionSpace(1, 5, 5, (3.0, 2.0), check_val=5),
-                          multiprocessGetSolutionSpace(1, 5, 5, (3.0, 2.0), check_val=[5]))
+    def test_multiprocess_get_solution_space_with_single_list_check_val_same_as_scalar(self):
+        self.assertEquals(multiprocess_get_solution_space(1, 5, 5, (3.0, 2.0), check_val=5),
+                          multiprocess_get_solution_space(1, 5, 5, (3.0, 2.0), check_val=[5]))
 
-    def test_multiprocessGetSolutionSpace_with_single_dict_check_val_same_as_scalar(self):
-        self.assertEquals(multiprocessGetSolutionSpace(1, 5, 5, (3.0, 2.0), check_val=5),
-                          multiprocessGetSolutionSpace(1, 5, 5, (3.0, 2.0), check_val={5: 1}))
+    def test_multiprocess_get_solution_space_with_single_dict_check_val_same_as_scalar(self):
+        self.assertEquals(multiprocess_get_solution_space(1, 5, 5, (3.0, 2.0), check_val=5),
+                          multiprocess_get_solution_space(1, 5, 5, (3.0, 2.0), check_val={5: 1}))
 
-    def test_multiprocessGetSolutionSpace_with_multiple_list_check_val(self):
-        self.assertIsNone(multiprocessGetSolutionSpace(1, 5, 100, (2.3, 0.45), check_val=[1,5]))
+    def test_multiprocess_get_solution_space_with_multiple_list_check_val(self):
+        self.assertIsNone(multiprocess_get_solution_space(1, 5, 100, (2.3, 0.45), check_val=[1,5]))
 
-    def test_multiprocessGetSolutionSpace_with_multiple_dict_check_val(self):
-        self.assertIsNone(multiprocessGetSolutionSpace(1, 5, 100, (2.3, 0.45), check_val={5: 1, 1: 2}))
+    def test_multiprocess_get_solution_space_with_multiple_dict_check_val(self):
+        self.assertIsNone(multiprocess_get_solution_space(1, 5, 100, (2.3, 0.45), check_val={5: 1, 1: 2}))
 
-    def test_multiprocessGetSolutionSpace_with_poss_vals(self):
+    def test_multiprocess_get_solution_space_with_poss_vals(self):
         expected_result = (Matrix([[1, 1, 0, 3, 0]]), 
                            Matrix([[-1, 3, -3,  1, 0],
                                    [-1, 2,  0, -2, 1]]),
@@ -214,9 +214,9 @@ class TestRecreateData(unittest.TestCase):
                                    [ 15],
                                    [200]]),
                            (3.0, 2.0))
-        self.assertEquals(expected_result, multiprocessGetSolutionSpace(1, 5, 5, (3.0, 2.0), poss_vals=[1,2,3,4,5]))
+        self.assertEquals(expected_result, multiprocess_get_solution_space(1, 5, 5, (3.0, 2.0), poss_vals=[1,2,3,4,5]))
 
-    def test_multiprocessGetSolutionSpace_with_poss_vals_and_int_check_val(self):
+    def test_multiprocess_get_solution_space_with_poss_vals_and_int_check_val(self):
         expected_result = (Matrix([[0, 3, 0, 1, 0]]), 
                            Matrix([[-1, 3, -3,  1, 0],
                                    [-1, 2,  0, -2, 1]]),
@@ -227,10 +227,10 @@ class TestRecreateData(unittest.TestCase):
                                    [ 10],
                                    [100]]),
                            (3.0, 2.0))
-        self.assertEquals(expected_result, multiprocessGetSolutionSpace(1, 5, 5, (3.0, 2.0), check_val=5, poss_vals=[1,2,3,4,5]))
+        self.assertEquals(expected_result, multiprocess_get_solution_space(1, 5, 5, (3.0, 2.0), check_val=5, poss_vals=[1,2,3,4,5]))
 
-    def test_multiprocessGetSolutionSpace_with_poss_vals_and_list_check_val(self):
-        self.assertIsNone(multiprocessGetSolutionSpace(1, 5, 5, (3.0, 2.0), check_val=[4,5], poss_vals=[1,2,3,4,5]))
+    def test_multiprocess_get_solution_space_with_poss_vals_and_list_check_val(self):
+        self.assertIsNone(multiprocess_get_solution_space(1, 5, 5, (3.0, 2.0), check_val=[4,5], poss_vals=[1,2,3,4,5]))
 
     # Refactoring checks
     def test_reduce_lambda_scalar(self):

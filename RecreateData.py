@@ -25,7 +25,7 @@ def multiprocessGetManipBases(basis_and_base_vec):
     manip_base_vec = forced_neg_removal(manip_basis, base_vec)
     return (manip_basis, manip_base_vec)
 
-def multiprocessGetSolutionSpace(min_score, max_score, num_samples, mean_and_variance,
+def multiprocess_get_solution_space(min_score, max_score, num_samples, mean_and_variance,
                                  check_val=None, poss_vals=None, debug=True):
     '''
     A function call to mimic the one on the RecreateData object while remaining multiprocess compatible
@@ -260,13 +260,13 @@ class RecreateData:
             print("Checking for potential solution spaces.")
         if multiprocess:
             pool = mp.Pool()
-            func = functools.partial(multiprocessGetSolutionSpace,self.min_score, self.max_score, self.num_samples,
+            func = functools.partial(multiprocess_get_solution_space,self.min_score, self.max_score, self.num_samples,
                                      check_val=check_val, poss_vals=poss_vals, debug=self.debug)
             solution_spaces = pool.map(func, mean_variance_pairs)
             pool.close()
             pool.join()
         else:
-            solution_spaces = [multiprocessGetSolutionSpace(self.min_score, self.max_score, self.num_samples,
+            solution_spaces = [multiprocess_get_solution_space(self.min_score, self.max_score, self.num_samples,
                                                             mean_variance_pair,
                                                             check_val=check_val, poss_vals=poss_vals,
                                                             debug=self.debug)
