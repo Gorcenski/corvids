@@ -74,7 +74,8 @@ def multiprocessGetSolutionSpace(min_score, max_score, num_samples, mean_and_var
         elif isinstance(check_val, dict):
             check_vals = [(val, num) for val, num in check_val.iteritems()]
         else:
-            raise TypeError 
+            raise TypeError
+        # further refactor: move the lambda to a utility function 
         [num_samples, mean, variance] = reduce(lambda x, y: [x[0] - y[1],
                                                              x[1] - y[0] * y[1],
                                                              x[2] - y[1] * (x[0] * y[0] - x[1]) ** 2],
@@ -90,7 +91,7 @@ def multiprocessGetSolutionSpace(min_score, max_score, num_samples, mean_and_var
             print("found potential at: " + str(mean_and_variance))
         return base_vec, basis, A, b, mean_and_variance
     except IndexError:
-        print("Unable to find a potential basis")
+        print("Unable to find a potential solution")
         return None
 
 class RecreateData:
@@ -102,21 +103,26 @@ class RecreateData:
     def __init__(self, min_score, max_score, num_samples, mean, variance, debug=True, mean_precision=0.0, variance_precision=0.0):
         self.simpleData = defaultdict(list)
         self.debug = debug
-        self.absolute_min = min_score
+
         self.min_score = min_score
-        self.absolute_max = max_score
         self.max_score = max_score
+        self.absolute_min = min_score
+        self.absolute_max = max_score
         self.poss_vals = range(self.absolute_min, self.absolute_max + 1)
+        self.extended_poss_vals = None
+        
         self.num_samples = num_samples
         self.mean = mean
         self.variance = variance
         self.un_mut_num_samples = num_samples
         self.un_mut_mean = mean
         self.un_mut_variance = variance
+        
         self.sols = None
         self.mean_precision = mean_precision
         self.variance_precision = variance_precision
-        self.extended_poss_vals = None
+        
+        # precompute at initialization for better code clarity and performance
         self.mean_range = xrange(int(math.ceil((self.mean - self.mean_precision) * self.num_samples)),
                                  int(math.floor((self.mean + self.mean_precision) * self.num_samples)) + 1)
         self.n_minus_1_n_squared = (self.num_samples - 1) * self.num_samples ** 2
@@ -249,7 +255,7 @@ class RecreateData:
         return mean_variances
 
 
-    def _recreateData_piece_2(self, mean_variance_pairs, check_val=None, poss_vals=None, multiprocess=True, find_first=False):
+    def _build_solution_space(self, mean_variance_pairs, check_val=None, poss_vals=None, multiprocess=True):
         if self.debug:
             print("Checking for potential solution spaces.")
         if multiprocess:
@@ -525,8 +531,7 @@ class RecreateData:
             print("Could not compute mean-variance pairs. Exiting.")
             return None
             
-        # does not use find_first
-        solution_spaces = self._recreateData_piece_2(mean_var_pairs, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
+        solution_spaces = self._build_solution_space(mean_var_pairs, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess)
 
         if find_first:
             # Does not use find_first
