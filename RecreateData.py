@@ -285,44 +285,15 @@ class RecreateData:
             base_vec, basis, _, _, param_tuple = solution_space
             if len(basis) == 0:
                 if not any([val<0 for val in base_vec._mat]):
-                    sol = base_vec._mat
-                    temp_sol =[int(v) for v in sol]
-                    if check_val:
-                        if isinstance(check_val,int):
-                            try:
-                                temp_sol[poss_vals.index(check_val)]+=1
-                            except ValueError:
-                                temp_sol.append(1)
-                                poss_vals.append(check_val)
-                                # temp_sol[poss_vals.index(val)]=1
-
-                        elif isinstance(check_val, list):
-                            for val in check_val:
-                                try:
-                                    temp_sol[poss_vals.index(val)]+=1
-                                except ValueError:
-                                    temp_sol.append(1)
-                                    poss_vals.append(val)
-                                    # temp_sol[poss_vals.index(val)]=1
-                        elif isinstance(check_val, dict):
-                            for val, num in check_val.iteritems():
-                                try:
-                                    temp_sol[poss_vals.index(val)]+=1
-                                except ValueError:
-                                    poss_vals.append(val)
-                                    temp_sol.append(1)
-                                    # temp_sol[poss_vals.index(val)]=1
-                        else:
-                            raise TypeError
+                    poss_vals, temp_sol = self._find_potential_solution_from_base_vec(base_vec, poss_vals)
                     self.sols[param_tuple] = [temp_sol]
-
                 continue
             init_base_vecs.append(base_vec)
             init_bases.append(basis)
             param_tuples.append(param_tuple)
         if self.debug:
-            print "Found " + str(len(param_tuples) + len(self.sols)) + " potentially viable mean/variance pairs." #Get Katherine to UPDATE this!
-            print "Manipulating Bases and Initial Vectors for Complete Search Guarantee"
+            print("Found " + str(len(param_tuples) + len(self.sols)) + " potentially viable mean/variance pairs.") #Get Katherine to UPDATE this!
+            print("Manipulating Bases and Initial Vectors for Complete Search Guarantee")
         return init_bases, init_base_vecs, param_tuples
 
 
@@ -412,6 +383,7 @@ class RecreateData:
             raise TypeError
         return poss_vals, temp_sol
 
+
     def _find_potential_solution_from_base_vec(self, base_vec, poss_vals):
         sol = base_vec._mat
         temp_sol = [int(v) for v in sol]
@@ -419,6 +391,7 @@ class RecreateData:
             poss_vals, temp_sol = self._expand_poss_vals_with_check_val(check_val, temp_sol, poss_vals)
         
         return poss_vals, temp_sol
+
 
     def _find_first_solution(self, solution_spaces, check_val=None, poss_vals=None, multiprocess=True):
         base_vecs = []
@@ -500,7 +473,7 @@ class RecreateData:
             # does not use multiprocess or find_first
             init_bases, init_base_vecs, param_tuples = self._findAll_piece_1_multi_proc(solution_spaces, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
             # does not use multiprocess or find_first
-            return self._findAll_piece_2_multi_proc(init_bases, init_base_vecs,param_tuples, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
+            return self._findAll_piece_2_multi_proc(init_bases, init_base_vecs, param_tuples, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
 
 
     def getDataSimple(self):
