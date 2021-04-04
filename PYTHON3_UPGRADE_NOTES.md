@@ -37,3 +37,6 @@ The code is quite clever although was not written with software engineering best
   - I added unit and integration tests for the `validMeansVariances` method
   - I renamed and refactored `validMeansVariances` to `_compute_valid_means_variances` method
   - I refactored the `_recreateData_piece_1` to remove its statefulness, moving its stateful behavior to a public setter, and replacing its usage with a direct call to `_compute_valid_means_variances`
+
+- 04.05.2021: Further refactors, decomposing big functions into smaller ones
+  - Broke apart some functional units in the `_find_first_solution` method, renamed from `_findFirst_piece_1`. There was no `piece_2` for this method, and the method was mixing snake case and camel case. In the refactor, I created two helper functions, `_expand_poss_vals_with_check_val` and `_find_potential_solution_from_base_vec`. This allowed some repeated code to be consolidated. I also added a bunch of tests for the method.

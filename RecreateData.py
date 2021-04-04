@@ -387,9 +387,44 @@ class RecreateData:
         return self.sols
 
 
-    def _findFirst_piece_1(self, solution_spaces, check_val=None, poss_vals=None, multiprocess=True, find_first=True):
+    def _expand_poss_vals_with_check_val(self, check_val, temp_sol, poss_vals):
+        if isinstance(check_val, int):
+            try:
+                temp_sol[poss_vals.index(check_val)] += 1
+            except ValueError:
+                temp_sol.append(1)
+                poss_vals.append(check_val)
+        elif isinstance(check_val, list):
+            for val in check_val:
+                try:
+                    temp_sol[poss_vals.index(val)] += 1
+                except ValueError:
+                    temp_sol.append(1)
+                    poss_vals.append(val)
+        elif isinstance(check_val, dict):
+            for val, num in check_val.iteritems():
+                try:
+                    temp_sol[poss_vals.index(val)] += 1
+                except ValueError:
+                    poss_vals.append(val)
+                    temp_sol.append(1)
+        else:
+            raise TypeError
+        return poss_vals, temp_sol
+
+    def _find_potential_solution_from_base_vec(self, base_vec, poss_vals):
+        sol = base_vec._mat
+        temp_sol = [int(v) for v in sol]
+        if check_val:
+            poss_vals, temp_sol = self._expand_poss_vals_with_check_val(check_val, temp_sol, poss_vals)
+        
+        return poss_vals, temp_sol
+
+    def _find_first_solution(self, solution_spaces, check_val=None, poss_vals=None, multiprocess=True):
         base_vecs = []
         bases = []
+        if not poss_vals:
+            poss_vals = self.poss_vals
         if multiprocess:
             init_base_vecs = []
             init_bases = []
@@ -397,39 +432,11 @@ class RecreateData:
                 if solution_space == None:
                     continue
                 base_vec, basis, _, _, param_tuple = solution_space
-                print(basis)
-                if len(basis) == 0:
-                    if not any([val<0 for val in base_vec._mat]):
-                        sol = base_vec._mat
-                        temp_sol =[int(v) for v in sol]
-                        if check_val:
-                            if isinstance(check_val,int):
-                                try:
-                                    temp_sol[poss_vals.index(check_val)]+=1
-                                except ValueError:
-                                    temp_sol.append(1)
-                                    poss_vals.append(check_val)
-                            elif isinstance(check_val, list):
-                                for val in check_val:
-                                    try:
-                                        temp_sol[poss_vals.index(val)]+=1
-                                    except ValueError:
-                                        temp_sol.append(1)
-                                        poss_vals.append(val)
-                                        # temp_sol[poss_vals.index(val)]=1
-                            elif isinstance(check_val, dict):
-                                for val, num in check_val.iteritems():
-                                    try:
-                                        temp_sol[poss_vals.index(val)]+=1
-                                    except ValueError:
-                                        poss_vals.append(val)
-                                        temp_sol.append(1)
-                                        # temp_sol[poss_vals.index(val)]=1
-                            else:
-                                raise TypeError
-                        self.sols[param_tuple] = [temp_sol]
-                        self.extended_poss_vals = poss_vals
-                        return self.sols
+                if (len(basis) == 0) and not any([val < 0 for val in base_vec._mat]):
+                    poss_vals, temp_sol = self._find_potential_solution_from_base_vec(base_vec, poss_vals)
+                    self.sols[param_tuple] = [temp_sol]
+                    self.extended_poss_vals = poss_vals
+                    return self.sols
                 init_base_vecs.append(base_vec)
                 init_bases.append(basis)
             pool = mp.Pool()
@@ -443,40 +450,11 @@ class RecreateData:
                 if solution_space == None:
                     continue
                 base_vec, basis, _, _, param_tuple = solution_space
-                if len(basis) == 0:
-                    if not any([val<0 for val in base_vec._mat]):
-                        sol = base_vec._mat
-                        temp_sol =[int(v) for v in sol]
-                        if check_val:
-                            if isinstance(check_val,int):
-                                try:
-                                    temp_sol[poss_vals.index(check_val)]+=1
-                                except ValueError:
-                                    temp_sol.append(1)
-                                    poss_vals.append(check_val)
-                                    # temp_sol[poss_vals.index(val)]=1
-
-                            elif isinstance(check_val, list):
-                                for val in check_val:
-                                    try:
-                                        temp_sol[poss_vals.index(val)]+=1
-                                    except ValueError:
-                                        temp_sol.append(1)
-                                        poss_vals.append(val)
-                                        # temp_sol[poss_vals.index(val)]=1
-                            elif isinstance(check_val, dict):
-                                for val, num in check_val.iteritems():
-                                    try:
-                                        temp_sol[poss_vals.index(val)]+=1
-                                    except ValueError:
-                                        poss_vals.append(val)
-                                        temp_sol.append(1)
-                                        # temp_sol[poss_vals.index(val)]=1
-                            else:
-                                raise TypeError
-                        self.sols[param_tuple] = [temp_sol]
-                        self.extended_poss_vals = poss_vals
-                        return self.sols
+                if len(basis) == 0 and not any([val < 0 for val in base_vec._mat]):
+                    poss_vals, temp_sol = self._find_potential_solution_from_base_vec(base_vec, poss_vals)
+                    self.sols[param_tuple] = [temp_sol]
+                    self.extended_poss_vals = poss_vals
+                    return self.sols
                 manip_basis, base_vec = getManipBasis(basis, base_vec)
                 manip_base_vec = forced_neg_removal(manip_basis, base_vec)
                 base_vecs.append(manip_base_vec)
@@ -486,39 +464,21 @@ class RecreateData:
                 sol = recurse_find_first(basis, base_vec)
                 if sol:
                     break
+        
         if not sol:
             self.extended_poss_vals = poss_vals
             return None
+
         sol = [int(v) for v in sol]
         if check_val:
-            if isinstance(check_val,int):
-                try:
-                    sol[poss_vals.index(check_val)]+=1
-                except ValueError:
-                    sol.append(1)
-                    poss_vals.append(check_val)
-        
-            elif isinstance(check_val, list):
-                for val in check_val:
-                    try:
-                        sol[poss_vals.index(val)]+=1
-                    except ValueError:
-                        sol.append(1)
-                        poss_vals.append(val)
-            elif isinstance(check_val, dict):
-                for val, num in check_val.iteritems():
-                    try:
-                        sol[poss_vals.index(val)]+=1
-                    except ValueError:
-                        poss_vals.append(val)
-                        sol.append(1)
-            else:
-                raise TypeError
+            poss_vals, sol = self._expand_poss_vals_with_check_val(check_val, sol, poss_vals)
 
-        self.sols = {'_':[sol]}
-        if self.debug:
-            print "Done."
+        self.sols = {'_': [sol]}
         self.extended_poss_vals = poss_vals
+        
+        if self.debug:
+            print("Found first solution. Finishing. For more solutions, set find_first to False.")
+        
         return self.sols
 
 
@@ -535,7 +495,7 @@ class RecreateData:
 
         if find_first:
             # Does not use find_first
-            return self._findFirst_piece_1(solution_spaces, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
+            return self._find_first_solution(solution_spaces, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess)
         else:
             # does not use multiprocess or find_first
             init_bases, init_base_vecs, param_tuples = self._findAll_piece_1_multi_proc(solution_spaces, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)

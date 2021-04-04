@@ -232,6 +232,46 @@ class TestRecreateData(unittest.TestCase):
     def test_multiprocess_get_solution_space_with_poss_vals_and_list_check_val(self):
         self.assertIsNone(multiprocess_get_solution_space(1, 5, 5, (3.0, 2.0), check_val=[4,5], poss_vals=[1,2,3,4,5]))
 
+    # _find_first_solution
+    def test__find_first_solution_without_check_val_or_poss_vals(self):
+        find_first = True
+        mean_var_pairs = self.rd._compute_valid_means_variances(find_first)
+        solution_spaces = self.rd._build_solution_space(mean_var_pairs)
+        expected_result = {'_': [[1, 1, 1, 1, 1]]}
+        self.assertDictEqual(expected_result, self.rd._find_first_solution(solution_spaces))
+    
+    def test__find_first_solution_independent_of_multiprocess(self):
+        find_first = True
+        mean_var_pairs = self.rd._compute_valid_means_variances(find_first)
+        solution_spaces = self.rd._build_solution_space(mean_var_pairs)
+        self.assertDictEqual(self.rd._find_first_solution(solution_spaces, multiprocess=True), 
+                             self.rd._find_first_solution(solution_spaces, multiprocess=False))
+
+    def test__find_first_solution_without_check_val_but_with_poss_vals(self):
+        find_first = True
+        poss_vals = [1, 2, 3, 4, 5]
+        mean_var_pairs = self.rd._compute_valid_means_variances(find_first)
+        solution_spaces = self.rd._build_solution_space(mean_var_pairs, poss_vals=poss_vals)
+        expected_result = {'_': [[1, 1, 1, 1, 1]]}
+        self.assertDictEqual(expected_result, self.rd._find_first_solution(solution_spaces))
+
+    def test__find_first_solution_with_check_val_but_without_poss_vals(self):
+        find_first = True
+        check_val = [4, 5]
+        mean_var_pairs = self.rd._compute_valid_means_variances(find_first)
+        solution_spaces = self.rd._build_solution_space(mean_var_pairs, check_val=check_val)
+        expected_result = {'_': [[1, 1, 1, 1, 1]]}
+        self.assertIsNone(self.rd._find_first_solution(solution_spaces, check_val=check_val))
+
+    def test__find_first_solution_with_check_val_and_poss_vals(self):
+        find_first = True
+        poss_vals = [1, 2, 3, 4, 5]
+        check_val = [4, 5]
+        mean_var_pairs = self.rd._compute_valid_means_variances(find_first)
+        solution_spaces = self.rd._build_solution_space(mean_var_pairs, check_val=check_val, poss_vals=poss_vals)
+        expected_result = {'_': [[1, 1, 1, 1, 1]]}
+        self.assertIsNone(self.rd._find_first_solution(solution_spaces, check_val=check_val, poss_vals=poss_vals))
+
     # Refactoring checks
     def test_reduce_lambda_scalar(self):
         check_val = 5
