@@ -18,8 +18,7 @@ def multiprocessGetManipBases(basis_and_base_vec):
     manip_base_vec = forced_neg_removal(manip_basis, base_vec)
     return (manip_basis, manip_base_vec)
 
-def multiprocess_get_solution_space(min_score, max_score, num_samples, mean_and_variance,
-                                 check_val=None, poss_vals=None, debug=True):
+def multiprocess_get_solution_space(num_samples, poss_vals, mean_and_variance, check_val=None, debug=True):
     '''
     A function call to mimic the one on the RecreateData object while remaining multiprocess compatible
         (can't pickle an object method within the object namespace)
@@ -50,8 +49,6 @@ def multiprocess_get_solution_space(min_score, max_score, num_samples, mean_and_
              Or:
                             None if no solution exists
     '''
-    if not poss_vals:
-        poss_vals = xrange(min_score, max_score+1)
 
     mean, variance = mean_and_variance
     mean = int(round(mean * num_samples))
@@ -95,23 +92,16 @@ class RecreateData:
 
     def __init__(self, min_score, max_score, num_samples, mean, variance, debug=True, mean_precision=0.0, variance_precision=0.0):
         self.simpleData = defaultdict(list)
+        self.sols = None
         self.debug = debug
 
-        self.min_score = min_score
-        self.max_score = max_score
-        self.absolute_min = min_score
-        self.absolute_max = max_score
-        self.poss_vals = range(self.absolute_min, self.absolute_max + 1)
         self.extended_poss_vals = None
         
+        self.min_score = min_score
+        self.max_score = max_score
         self.num_samples = num_samples
         self.mean = mean
         self.variance = variance
-        self.un_mut_num_samples = num_samples
-        self.un_mut_mean = mean
-        self.un_mut_variance = variance
-        
-        self.sols = None
         self.mean_precision = mean_precision
         self.variance_precision = variance_precision
         
@@ -121,13 +111,7 @@ class RecreateData:
         self.n_minus_1_n_squared = (self.num_samples - 1) * self.num_samples ** 2
 
 
-    def set_ranges_with_possible_values(self, poss_vals):
-        self.min_score = min(poss_vals)
-        self.max_score = max(poss_vals)
-        self.poss_vals = poss_vals
-
-
-    def adjust_sol(self, solution, num_adjustments):
+    def adjust_sol(self, solution, num_adjustments, poss_vals):
         if num_adjustments == 0:
             return solution
         new_sol = deepcopy(solution)
@@ -138,7 +122,8 @@ class RecreateData:
             items = list(set(new_sol))
             items.sort()
             if correction == 1:
-                candidates = [item for item, count in collections.Counter(new_sol).items() if count > 1 and (item + 1) in self.poss_vals and (item - 1) in self.poss_vals]
+                candidates = [item for item, count in collections.Counter(new_sol).items()
+                              if count > 1 and (item + 1) in poss_vals and (item - 1) in poss_vals]
                 if len(candidates)==0:
                     return None
                 potential_diff = candidates[0]
@@ -159,10 +144,10 @@ class RecreateData:
             items.sort()
             for val_1, val_2 in itertools.combinations(items, 2):
                 #since we sorted items, val_1 is the smaller one
-                for size in xrange(1, min((max(self.poss_vals) - val_2), val_1 - min(self.poss_vals))):
-                    if val_1 - size not in self.poss_vals or val_2 + size not in self.poss_vals:
+                for size in xrange(1, min((max(poss_vals) - val_2), val_1 - min(poss_vals))):
+                    if val_1 - size not in poss_vals or val_2 + size not in poss_vals:
                         continue
-                    adjustment = (math.fabs(val_1 - val_2)*size + size**2)
+                    adjustment = (math.fabs(val_1 - val_2) * size + size ** 2)
                     if adjustment <= correction:
                         potential_diffs.append((adjustment, val_1, val_2, size))
             if len(potential_diffs) == 0:
@@ -210,7 +195,7 @@ class RecreateData:
         print("Could not find a unique first solution. Try setting find_first to false. Exiting.")
 
 
-    def _compute_valid_means_variances(self, findFirst):
+    def _compute_valid_means_variances(self, findFirst, poss_vals):
         solutions = defaultdict(list)
         means_list = [float(i) / self.num_samples for i in self.mean_range]
         
@@ -233,7 +218,7 @@ class RecreateData:
                     i_over_n_minus_1_n_squared = float(i) / self.n_minus_1_n_squared
                     mean_variances.append((m, i_over_n_minus_1_n_squared))
 
-                    solution = self.adjust_sol(initial_mean_valid, int((i - initial_adjusted_var) / step_size))
+                    solution = self.adjust_sol(initial_mean_valid, int((i - initial_adjusted_var) / step_size), poss_vals)
                     if solution:
                         solutions[(m, i_over_n_minus_1_n_squared)].append(solution)
                 i += step_size - offset
@@ -248,26 +233,27 @@ class RecreateData:
         return mean_variances
 
 
-    def _build_solution_space(self, mean_variance_pairs, check_val=None, poss_vals=None, multiprocess=True):
+    def _build_solution_space(self, mean_variance_pairs, poss_vals, check_val=None,  multiprocess=True):
         if self.debug:
             print("Checking for potential solution spaces.")
         if multiprocess:
             pool = mp.Pool()
-            func = functools.partial(multiprocess_get_solution_space,self.min_score, self.max_score, self.num_samples,
-                                     check_val=check_val, poss_vals=poss_vals, debug=self.debug)
+            func = functools.partial(multiprocess_get_solution_space, self.num_samples, poss_vals,
+                                     check_val=check_val, debug=self.debug)
             solution_spaces = pool.map(func, mean_variance_pairs)
             pool.close()
             pool.join()
         else:
-            solution_spaces = [multiprocess_get_solution_space(self.min_score, self.max_score, self.num_samples,
-                                                            mean_variance_pair,
-                                                            check_val=check_val, poss_vals=poss_vals,
-                                                            debug=self.debug)
+            solution_spaces = [multiprocess_get_solution_space(self.num_samples,
+                                                               poss_vals,
+                                                               mean_variance_pair,
+                                                               check_val=check_val,
+                                                               debug=self.debug)
                                for mean_variance_pair in mean_variance_pairs]
         return solution_spaces
 
 
-    def _findAll_piece_1_multi_proc(self, solution_spaces, check_val=None, poss_vals=None, multiprocess=True, find_first=False):
+    def _findAll_piece_1_multi_proc(self, solution_spaces, poss_vals, check_val=None, multiprocess=True, find_first=False):
         self.sols = {}
         init_base_vecs = []
         init_bases = []
@@ -287,10 +273,10 @@ class RecreateData:
         if self.debug:
             print("Found " + str(len(param_tuples) + len(self.sols)) + " potentially viable mean/variance pairs.") #Get Katherine to UPDATE this!
             print("Manipulating Bases and Initial Vectors for Complete Search Guarantee")
-        return init_bases, init_base_vecs, param_tuples
+        return init_bases, init_base_vecs, param_tuples, poss_vals
 
 
-    def _findAll_piece_2_multi_proc(self, init_bases, init_base_vecs, param_tuples, check_val=None, poss_vals=None, multiprocess=True, find_first=False):
+    def _findAll_piece_2_multi_proc(self, init_bases, init_base_vecs, param_tuples, poss_vals, check_val=None, multiprocess=True, find_first=False):
         pool = mp.Pool()
         bases_and_inits= []
         for X in zip(init_bases, init_base_vecs):
@@ -386,11 +372,9 @@ class RecreateData:
         return poss_vals, temp_sol
 
 
-    def _find_first_solution(self, solution_spaces, check_val=None, poss_vals=None, multiprocess=True):
+    def _find_first_solution(self, solution_spaces, poss_vals, check_val=None, multiprocess=True):
         base_vecs = []
         bases = []
-        if not poss_vals:
-            poss_vals = self.poss_vals
         if multiprocess:
             init_base_vecs = []
             init_bases = []
@@ -402,7 +386,7 @@ class RecreateData:
                     poss_vals, temp_sol = self._find_potential_solution_from_base_vec(base_vec, poss_vals)
                     self.sols[param_tuple] = [temp_sol]
                     self.extended_poss_vals = poss_vals
-                    return self.sols
+                    return self.sols, poss_vals
                 init_base_vecs.append(base_vec)
                 init_bases.append(basis)
             pool = mp.Pool()
@@ -420,7 +404,7 @@ class RecreateData:
                     poss_vals, temp_sol = self._find_potential_solution_from_base_vec(base_vec, poss_vals)
                     self.sols[param_tuple] = [temp_sol]
                     self.extended_poss_vals = poss_vals
-                    return self.sols
+                    return self.sols, poss_vals
                 manip_basis, base_vec = getManipBasis(basis, base_vec)
                 manip_base_vec = forced_neg_removal(manip_basis, base_vec)
                 base_vecs.append(manip_base_vec)
@@ -433,7 +417,7 @@ class RecreateData:
         
         if not sol:
             self.extended_poss_vals = poss_vals
-            return None
+            return None, poss_vals
 
         sol = [int(v) for v in sol]
         if check_val:
@@ -445,31 +429,42 @@ class RecreateData:
         if self.debug:
             print("Found first solution. Finishing. For more solutions, set find_first to False.")
         
-        return self.sols
+        return self.sols, poss_vals
 
 
     def recreateData(self, check_val=None, poss_vals=None, multiprocess=True, find_first=False):
-        if poss_vals:
-            self.set_ranges_with_possible_values(poss_vals)
-        mean_var_pairs = self._compute_valid_means_variances(find_first)
+        if not poss_vals:
+            poss_vals = range(self.min_score, self.max_score + 1)
+        mean_var_pairs = self._compute_valid_means_variances(find_first, poss_vals)
 
         if not mean_var_pairs:
             print("Could not compute mean-variance pairs. Exiting.")
             return None
             
-        solution_spaces = self._build_solution_space(mean_var_pairs, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess)
+        solution_spaces = self._build_solution_space(mean_var_pairs, poss_vals, check_val=check_val, multiprocess=multiprocess)
 
         if find_first:
             # Does not use find_first
-            return self._find_first_solution(solution_spaces, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess)
+            return self._find_first_solution(solution_spaces, poss_vals, check_val=check_val, multiprocess=multiprocess)
         else:
             # does not use multiprocess or find_first
-            init_bases, init_base_vecs, param_tuples = self._findAll_piece_1_multi_proc(solution_spaces, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
+            init_bases, init_base_vecs, param_tuples, poss_vals = self._findAll_piece_1_multi_proc(solution_spaces,
+                                                                                                   poss_vals,
+                                                                                                   check_val=check_val,
+                                                                                                   multiprocess=multiprocess,
+                                                                                                   find_first=find_first)
             # does not use multiprocess or find_first
-            return self._findAll_piece_2_multi_proc(init_bases, init_base_vecs, param_tuples, check_val=check_val, poss_vals=poss_vals, multiprocess=multiprocess, find_first=find_first)
+            return (self._findAll_piece_2_multi_proc(init_bases,
+                                                     init_base_vecs,
+                                                     param_tuples,
+                                                     poss_vals,
+                                                     check_val=check_val,
+                                                     multiprocess=multiprocess,
+                                                     find_first=find_first),
+                    poss_vals)
 
 
-    def getDataSimple(self):
+    def getDataSimple(self, poss_vals):
         if self.simpleData:
             return self.simpleData
         if not self.sols:
@@ -479,7 +474,6 @@ class RecreateData:
         for param, sol_list in self.sols.iteritems():
             for sol in sol_list:
                 simple_sol = []
-                poss_vals = self.poss_vals
                 if self.extended_poss_vals:
                     poss_vals = self.extended_poss_vals
                 for value, num_instances in zip(poss_vals, sol):
@@ -491,5 +485,5 @@ class RecreateData:
 if __name__ == "__main__":
     import sys
     RD = RecreateData(1,7,10,3,4, mean_precision=0.5, variance_precision=0.5)
-    RD.recreateData(multiprocess=True, find_first=False)
-    print RD.getDataSimple()
+    solution, poss_vals = RD.recreateData(multiprocess=True, find_first=False)
+    print RD.getDataSimple(poss_vals)
